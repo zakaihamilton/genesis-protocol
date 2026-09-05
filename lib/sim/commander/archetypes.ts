@@ -60,8 +60,9 @@ function repairPriority(kind: Entity["kind"]): number {
 
 function repairCommand(state: SimState, strategy: ArchetypeStrategy): Command | undefined {
   if (strategy !== "turtle") return undefined;
+  if (playerBuildingsView(state).some((building) => building.repairing)) return undefined;
   const target = playerBuildingsView(state)
-    .filter((building) => !building.repairing && canRepair(building))
+    .filter((building) => canRepair(building))
     .sort((a, b) => repairPriority(a.kind) - repairPriority(b.kind) || a.id - b.id)[0];
   return target ? { type: "repair", buildingId: target.id } : undefined;
 }

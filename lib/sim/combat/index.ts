@@ -25,7 +25,6 @@ export function tickCombat(state: SimState, eventSink?: SimEvent[], collectEvent
     if (ordered && e.attackTarget !== undefined) {
       const assignedCandidate = grid.byId[e.attackTarget];
       const assigned = assignedCandidate && assignedCandidate.hp > 0 ? assignedCandidate : undefined;
-      if (!assigned) e.attackTarget = undefined;
       if (!assigned) {
         e.attackTarget = undefined;
         resumeAttackMove(state, e);
