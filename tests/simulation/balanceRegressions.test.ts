@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_OPERATION_TICKS } from "../../lib/gen/pacing";
+import { balanceFailureReason } from "../../lib/sim/balance";
 import {
   runBalanceJob,
   stableBalanceRecords,
@@ -67,12 +68,14 @@ describe("competent commander balance regressions", () => {
 
       if (record.result === "lost") {
         expect(record.lossReason).toBeDefined();
+        expect(record.failureReason).toBe(record.lossReason);
       } else if (record.result === "playing") {
         // A non-terminal record is only acceptable when the full generated
         // operation horizon was consumed rather than an accidental cap.
         expect(record.truncated).toBe(false);
         expect(record.duration).toBeGreaterThan(0);
       }
+      expect(record.failureReason).toBe(balanceFailureReason(record));
     }
   }, 120_000);
 });

@@ -12,7 +12,7 @@ import {
   BalanceTimeBudgetExceeded,
   type BalanceRunOptions,
 } from "../lib/sim/balanceRunner";
-import { archetypeFailureRecords, checkArchetypeBalance, checkBalance, DEFAULT_BALANCE_THRESHOLDS, summarizeBalance, type BalanceRecord, type BalanceThresholds } from "../lib/sim/balance";
+import { archetypeFailureRecords, balanceFailureReason, checkArchetypeBalance, checkBalance, DEFAULT_BALANCE_THRESHOLDS, summarizeBalance, type BalanceRecord, type BalanceThresholds } from "../lib/sim/balance";
 import type { BalanceStrategy } from "../lib/types";
 
 function arg(name: string, fallback: string): string {
@@ -122,6 +122,7 @@ async function main() {
       strategy: record.strategy,
       result: record.result,
       lossReason: record.lossReason ?? null,
+      failureReason: record.failureReason ?? balanceFailureReason(record) ?? null,
       timing: {
         ticks: record.duration,
         scenarioMs: Number(record.scenarioMs.toFixed(2)),

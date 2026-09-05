@@ -1,5 +1,6 @@
 import { inObjectiveZone } from "../../types";
 import type { Command, Entity, MissionKind, SimState } from "../../types";
+import { canRepair } from "../repair";
 import { distToEntity } from "../world";
 import {
   COMMANDER_CADENCE,
@@ -23,6 +24,36 @@ import {
 } from "./combat";
 import type { CommanderMetrics } from "./queries";
 
+const COMMANDER_REPAIR_CREDIT_RESERVE = 40;
+const COMMANDER_YARD_REPAIR_THRESHOLD = 0.92;
+const COMMANDER_STRUCTURE_REPAIR_THRESHOLD = 0.6;
+
+function repairPriority(kind: Entity["kind"]): number {
+  if (kind === "constructionYard") return 0;
+  if (kind === "power") return 1;
+  if (kind === "refinery") return 2;
+  if (kind === "barracks") return 3;
+  if (kind === "factory") return 4;
+  return 5;
+}
+
+function planRepair(state: SimState): Command | undefined {
+  if (state.credits[0] < COMMANDER_REPAIR_CREDIT_RESERVE) return undefined;
+  // Repair one structure at a time. This keeps the credit drain predictable
+  // and prevents the cadence from toggling an already-active repair order.
+  if (playerBuildingsView(state).some((building) => building.repairing)) return undefined;
+
+  const target = playerBuildingsView(state)
+    .filter((building) => canRepair(building))
+    .filter((building) => building.hp / building.maxHp <= (
+      building.kind === "constructionYard"
+        ? COMMANDER_YARD_REPAIR_THRESHOLD
+        : COMMANDER_STRUCTURE_REPAIR_THRESHOLD
+    ))
+    .sort((a, b) => repairPriority(a.kind) - repairPriority(b.kind) || a.id - b.id)[0];
+  return target ? { type: "repair", buildingId: target.id } : undefined;
+}
+
 export class CompetentCommander {
   private lastCombatOrder = "";
   private lastCombatOrderTick = Number.NEGATIVE_INFINITY;
@@ -37,9 +68,14 @@ export class CompetentCommander {
 
     this.metrics.plans += 1;
     const commands: Command[] = [];
-    const building = planBuilding(state, yard);
-    if (building) commands.push(building);
-    if (!building) commands.push(...planProduction(state));
+    const repair = planRepair(state);
+    if (repair) {
+      commands.push(repair);
+    } else {
+      const building = planBuilding(state, yard);
+      if (building) commands.push(building);
+      if (!building) commands.push(...planProduction(state));
+    }
 
     const threat = defensiveThreat(state, yard) ?? scenarioThreat(state);
     const objective = objectiveEntity(state);

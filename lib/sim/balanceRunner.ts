@@ -12,7 +12,7 @@ import { powerBreakdown } from "./world";
 import { TILE_BLOCKED, TILE_WATER, type BalanceStrategy, type Campaign, type Command, type MissionDef, type SimState, type UnitKind } from "../types";
 import { missionFamilyFor, resolveMissionProfile } from "../gen/profile";
 import { scenarioAffordances, type ScenarioAffordances } from "./scenarios";
-import type { BalanceRecord } from "./balance";
+import { balanceFailureReason, type BalanceRecord } from "./balance";
 
 export { ARCHETYPE_STRATEGIES, isArchetypeStrategy } from "./commander/archetypes";
 
@@ -296,6 +296,11 @@ function runOne(
     commandRejections: run.commandRejections,
     nonFiniteState: hasNonFiniteState(state),
     lossReason: state.lossReason,
+    failureReason: balanceFailureReason({
+      result: state.result,
+      truncated: run.truncated,
+      lossReason: state.lossReason,
+    }),
     firstCombatTick: run.firstCombatTick,
     firstPressureTick: run.firstPressureTick,
     primaryCompletedTick: run.primaryCompletedTick,

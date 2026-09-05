@@ -59,6 +59,24 @@ describe("competent commander", () => {
     expect(commander.getMetrics().commandsByType.produce).toBeGreaterThan(0);
   });
 
+  it("repairs a damaged command HQ without toggling an active repair", () => {
+    const state = makeFixture({ width: 24, height: 24, win: { kind: "forceQuota", role: "infantry", target: 1 } });
+    const yard = addBuilding(state, 0, "constructionYard", 2, 2);
+    addBuilding(state, 0, "power", 5, 2);
+    yard.hp = 2_800;
+    const commander = new CompetentCommander();
+
+    const first = commander.plan(state);
+    expect(first).toContainEqual({ type: "repair", buildingId: yard.id });
+    const result = tick(state, first);
+    expect(result.events).not.toContainEqual(expect.objectContaining({ type: "commandRejected" }));
+    expect(yard.repairing).toBe(true);
+    expect(yard.hp).toBeGreaterThan(2_800);
+
+    state.tick = 24;
+    expect(commander.plan(state)).not.toContainEqual({ type: "repair", buildingId: yard.id });
+  });
+
   it("keeps two identical missions and commander plans deterministic", () => {
     const a = createMission({ seed: 421, missionIndex: 0 });
     const b = createMission({ seed: 421, missionIndex: 0 });

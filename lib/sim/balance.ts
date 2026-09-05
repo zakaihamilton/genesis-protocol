@@ -20,6 +20,8 @@ export type BalanceRecord = {
   commandRejections: number;
   nonFiniteState?: boolean;
   lossReason?: string;
+  /** Stable classification for every non-winning balance record. */
+  failureReason?: string;
   firstCombatTick?: number;
   firstPressureTick?: number;
   primaryCompletedTick?: number;
@@ -112,6 +114,12 @@ export type BalanceCheck = {
   passed: boolean;
   failures: string[];
 };
+
+export function balanceFailureReason(record: Pick<BalanceRecord, "result" | "truncated" | "lossReason">): string | undefined {
+  if (record.result === "won") return undefined;
+  if (record.result === "lost") return record.lossReason ?? "unknown";
+  return record.truncated ? "truncated" : "timeout";
+}
 
 export const DEFAULT_BALANCE_THRESHOLDS: BalanceThresholds = {
   minWinRate: 0.60,

@@ -60,6 +60,21 @@ describe("runBalanceJob", () => {
     expect(records[0]!.scenarioMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("classifies capped runs as truncated instead of timeout", () => {
+    const [record] = runBalanceJob({
+      from: 0,
+      to: 0,
+      missions: [0],
+      maxTicks: 12,
+      strategy: "competent",
+      scenarios: [{ seed: 0, mission: 0 }],
+    });
+
+    expect(record?.result).toBe("playing");
+    expect(record?.truncated).toBe(true);
+    expect(record?.failureReason).toBe("truncated");
+  });
+
   it("calls onRecord for each scenario", () => {
     const job = {
       from: 0, to: 1, missions: [0], maxTicks: 12,
